@@ -1,0 +1,177 @@
+                                        |
+Description                             |
+Number of Iteration Loops               |
+Altitude                                |m
+Delta T from ISA                        |K
+Relative Humidity [%]                   |
+Mach Number                             |
+Overboard Bleed                         |kg/s
+Power Offtake                           |kW
+Net Thrust                              |kN
+Gross Thrust                            |kN
+Sp. Fuel Consumption                    |g/(kN*s)
+Specific Thrust                         |m/s
+Handling Bleed WB_hdl/W21               |
+Total Rel.Overb.Bld W_bld/W25           |
+Burner Fuel Flow                        |kg/s
+Reheat Fuel Flow                        |kg/s
+Total Fuel Flow                         |kg/s
+Overall Pressure Ratio P3/P2            |
+HPT Pressure Ratio                      |
+LPT Pressure Ratio                      |
+Isentr. Inner LPC Efficiency            |
+Polytr. Inner LPC Efficiency            |
+Isentr. Outer LPC Efficiency            |
+Polytr. Outer LPC Efficiency            |
+Isentropic HPC Efficiency               |
+Polytropic HPC Efficiency               |
+Overall Compression Efficiency          |
+Isentropic HPT Efficiency               |
+Polytropic HPT Efficiency               |
+Thermodyn. HPT Efficiency               |
+Isentropic LPT Efficiency               |
+Polytropic LPT Efficiency               |
+Overall Expansion Efficiency            |
+Ambient Pressure  Pamb                  |kPa
+Ram Temperature T1                      |K
+Ram Pressure P1                         |kPa
+Inlet Temperature T2                    |K
+Inlet Pressure P2                       |kPa
+Inlet static Pressure Ps2               |kPa
+Fan Inner Exit Temp T21                 |K
+Fan Inner Exit Press P21                |kPa
+Fan Outer Exit Temp T13                 |K
+Fan Outer Exit Press P13                |kPa
+Bypass Exit Pressure P16                |kPa
+HPC Inlet Pressure P25                  |kPa
+HPC Inlet stat Press Ps25               |kPa
+HPC Exit Temperature T3                 |K
+HPC Exit Pressure P3                    |kPa
+HPC Exit  static Press Ps3              |kPa
+Burner Exit Pressure P4                 |kPa
+Burner Exit Temperature T4              |K
+HPT Stator Outlet Temp T405             |K
+HPT Rotor Inlet Temp T41                |K
+HPT Exit Pressure P44                   |kPa
+LPT Inlet Pressure P45                  |kPa
+LPT Inlet Temperature T45               |K
+LPT Exit Temperature T5                 |K
+LPT Exit Pressure P5                    |kPa
+Mixed Temperature T64                   |K
+Mixed Pressure P64                      |kPa
+Nozzle Inlet Temp. T7                   |K
+Nozzle Throat Temp. T8                  |K
+Nozzle Throat Press P8                  |kPa
+Nozzle Throat Area                      |m²
+Nozzle Discharge Coefficient            |
+Nozzle Petal Angle [deg]                |
+Nozzle Throat Mach Number               |
+Nozzle Pressure Ratio                   |
+Total Mass Flow W2                      |kg/s
+Total Inlet C Flow W2Rstd               |kg/s
+Core Inlet Flow W21                     |kg/s
+Core Inlet C Flow W02Rstd               |kg/s
+Bypass Inlet Flow W12                   |kg/s
+Bypass Inlet C Fl W12Rstd               |kg/s
+HPC Inlet Flow W25                      |kg/s
+HPC Inlet C Flow W25Rstd                |kg/s
+HPC Exit Flow W3                        |kg/s
+HPC Exit  C Flow W3Rstd                 |kg/s
+Burner Exit Flow W4                     |kg/s
+HPT Rotor Inlet Flow W41                |kg/s
+HPT Inlet C Flow W41Rstd                |kg/s
+LPT Inlet Flow W45                      |kg/s
+LPT Inlet C Flow W45Rstd                |kg/s
+LPT Exit Flow W5                        |kg/s
+LPT Exit  C Flow W5Rstd                 |kg/s
+Core Exit Flow W6                       |kg/s
+Bypass Exit Flow W16                    |kg/s
+Mixed Flow W64                          |kg/s
+Nozzle Throat Flow W8                   |kg/s
+Nozzle Thr C Flow W8Rstd                |kg/s
+Burner Loading [%]                      |
+Burner Efficiency                       |
+NOx Severity Index                      |
+Outer LPC Spec. Work                    |kW/(kg/s)
+Inner LPC Spec. Work                    |kW/(kg/s)
+HPC Spec. Work                          |kW/(kg/s)
+HPT Spec. Work                          |kW/(kg/s)
+HPT Power                               |kW
+LPT Spec. Work                          |kW/(kg/s)
+LPT Power                               |kW
+Bypass/Core Press Ratio P16/P6          |
+Hot Stream Mixer Mach No                |
+Hot Stream Mixer Area                   |m²
+Cold Stream Mixer Mach No               |
+Cold Stream Mixer Area                  |m²
+Mixer Velocity Ratio V163/V63           |
+Mixer Mach Number                       |
+Mixer Area                              |m²
+Delta FG for 100% Mixing    [%]         |
+Delta FN for 100% Mixing    [%]         |
+Comp Interduct Press Loss [%]           |
+Burner Pressure Loss [%]                |
+Non-Chargeable HPT Wcl/W25              |
+Chargeable HPT Wcl/W25                  |
+Turb Interduct Press Loss [%]           |
+Non-Chargeable LPT Wcl/W25              |
+Chargeable LPT Wcl/W25                  |
+Turbine Exit Press Loss [%]             |
+Bypass Press Loss [%]                   |
+Core-Byp Heat Transfer dT13             |K
+Core-Byp Heat Transfer dT3              |K
+Cooling Air Cooling dT13                |K
+Cooling Air dT                          |K
+Bleed Air Cooling dT13                  |K
+Bleed Air dT                            |K
+Propulsive Efficiency                   |
+Core Efficiency                         |
+Interduct Pressure Ratio                |
+Engine Pressure Ratio P5/P2             |
+Equivalent Airspeed [knots]             |
+HP Spool Speed [RPM]                    |
+Rel. HP Spool Speed                     |
+Rel. Corr. HP Spool Speed               |
+HPC Surge Margin                        |
+HPC Surge Margin @ const N              |
+HPC Pressure Ratio                      |
+LP Spool Speed [RPM]                    |
+Rel. LP Spool Speed                     |
+Rel. Corr. LP Spool Speed               |
+LPC Inner Pressure Ratio                |
+Booster Surge Margin                    |
+Booster Surge Margin @ const N          |
+LPC Outer Pressure Ratio                |
+Fan Surge Margin                        |
+Fan Surge Margin @ const N              |
+Bypass Ratio                            |
+Rel. Corr. HPT Speed                    |
+HPT NRstd * WRstd                       |kg/s
+Rel. Corr. LPT Speed                    |
+LPT NRstd * WRstd                       |kg/s
+Active Limiter                          |
+Engine Pressure Ratio                   |
+Relative WF/P3 [%]                      |
+T hot spot - T main stream              |K
+Bypass Ratio in Dist. Sector            |
+Temp.Distortion Index HPC Inlet         |
+Reynolds Corr on Fan Eff                |
+Reynolds Corr on Fan Flow               |
+Reynolds Corr on Booster Eff            |
+Reynolds Corr on Booster Flow           |
+Reynolds Corr on HPC Eff                |
+Reynolds Corr on HPC Flow               |
+Reynolds Corr on HPT Eff                |
+Reynolds Corr on HPT Flow               |
+Reynolds Corr on LPT Eff                |
+Reynolds Corr on LPT Flow               |
+Variable Geometry Setting [deg]         |
+Betavalue in HPC Map                    |IterVariable
+Burner Temperature ZT4                  |IterVariable
+Betavalue in LPC Map                    |IterVariable
+LPC Spool Speed ZXNL                    |IterVariable
+Estimated Bypass Ratio                  |IterVariable
+Betavalue in HPT Map                    |IterVariable
+Betavalue in LPT Map                    |IterVariable
+delta T Recirculating Bleed             |IterVariable
+HPC Spool Speed ZXN                     |IterVariable
