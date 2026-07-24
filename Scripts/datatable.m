@@ -27,4 +27,3 @@ t4 = data([51 54 81 82 20 99 30 133],cond).'.*nfac;
 %LPT
 t5 =data([56 57 83 84 21 101 33 139],cond).'.*nfac;
 
-%Test Comment
