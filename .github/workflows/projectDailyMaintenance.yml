@@ -1,0 +1,657 @@
+name: Daily Project Maintenance
+
+on:
+  schedule:
+    # Runs daily at 6:17 AM in New York.
+    - cron: "55 11 * * *"
+      timezone: "America/New_York"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  maintain-project:
+    name: Maintain Project dates and overdue labels
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reconcile Project items
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.PROJECTS_TOKEN }}
+          retries: 3
+          script: |
+            const PROJECT_OWNER = "LARJJ-Tech";
+            const PROJECT_NUMBER = 3;
+
+            const STATUS_FIELD_NAME = "Status";
+            const START_DATE_FIELD_NAME = "Start date";
+            const COMPLETION_DATE_FIELD_NAME = "Completion date";
+            const TARGET_DATE_FIELD_NAME = "Target date";
+
+            const IN_PROGRESS_OPTION_NAME = "In Progress";
+            const OVERDUE_LABEL_NAME = "Overdue";
+
+            const TEAM_TIME_ZONE = "America/New_York";
+
+            function formatTeamDate(value) {
+              const parts = new Intl.DateTimeFormat("en-US", {
+                timeZone: TEAM_TIME_ZONE,
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              }).formatToParts(new Date(value));
+
+              const values = Object.fromEntries(
+                parts.map(part => [part.type, part.value])
+              );
+
+              return `${values.year}-${values.month}-${values.day}`;
+            }
+
+            const today = formatTeamDate(new Date());
+
+            core.info(`Team date: ${today}`);
+
+            /*
+             * Retrieve the Project and its field definitions.
+             */
+            const projectData = await github.graphql(`
+              query($owner: String!, $number: Int!) {
+                organization(login: $owner) {
+                  projectV2(number: $number) {
+                    id
+                    title
+
+                    fields(first: 100) {
+                      nodes {
+                        ... on ProjectV2Field {
+                          id
+                          name
+                          dataType
+                        }
+
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          dataType
+
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `, {
+              owner: PROJECT_OWNER,
+              number: PROJECT_NUMBER,
+            });
+
+            const project = projectData.organization?.projectV2;
+
+            if (!project) {
+              core.setFailed(
+                `Could not find Project ` +
+                `${PROJECT_OWNER}/${PROJECT_NUMBER}.`
+              );
+              return;
+            }
+
+            core.info(`Project: ${project.title}`);
+
+            const fields = project.fields.nodes.filter(Boolean);
+
+            const statusField = fields.find(
+              field => field.name === STATUS_FIELD_NAME
+            );
+
+            const startDateField = fields.find(
+              field => field.name === START_DATE_FIELD_NAME
+            );
+
+            const completionDateField = fields.find(
+              field => field.name === COMPLETION_DATE_FIELD_NAME
+            );
+
+            const targetDateField = fields.find(
+              field => field.name === TARGET_DATE_FIELD_NAME
+            );
+
+            const requiredFields = [
+              [STATUS_FIELD_NAME, statusField],
+              [START_DATE_FIELD_NAME, startDateField],
+              [COMPLETION_DATE_FIELD_NAME, completionDateField],
+              [TARGET_DATE_FIELD_NAME, targetDateField],
+            ];
+
+            for (const [fieldName, field] of requiredFields) {
+              if (!field) {
+                core.setFailed(
+                  `Could not find a field named "${fieldName}".`
+                );
+                return;
+              }
+            }
+
+            if (statusField.dataType !== "SINGLE_SELECT") {
+              core.setFailed(
+                `"${STATUS_FIELD_NAME}" must be a single-select field.`
+              );
+              return;
+            }
+
+            for (const dateField of [
+              startDateField,
+              completionDateField,
+              targetDateField,
+            ]) {
+              if (dateField.dataType !== "DATE") {
+                core.setFailed(
+                  `"${dateField.name}" must be a date field.`
+                );
+                return;
+              }
+            }
+
+            const inProgressOption = statusField.options?.find(
+              option => option.name === IN_PROGRESS_OPTION_NAME
+            );
+
+            if (!inProgressOption) {
+              core.setFailed(
+                `Could not find the status option ` +
+                `"${IN_PROGRESS_OPTION_NAME}".`
+              );
+              return;
+            }
+
+            async function setDateField(itemId, fieldId, date) {
+              await github.graphql(`
+                mutation(
+                  $projectId: ID!
+                  $itemId: ID!
+                  $fieldId: ID!
+                  $date: Date!
+                ) {
+                  updateProjectV2ItemFieldValue(
+                    input: {
+                      projectId: $projectId
+                      itemId: $itemId
+                      fieldId: $fieldId
+                      value: {
+                        date: $date
+                      }
+                    }
+                  ) {
+                    projectV2Item {
+                      id
+                    }
+                  }
+                }
+              `, {
+                projectId: project.id,
+                itemId,
+                fieldId,
+                date,
+              });
+            }
+
+            async function clearFieldValue(itemId, fieldId) {
+              await github.graphql(`
+                mutation(
+                  $projectId: ID!
+                  $itemId: ID!
+                  $fieldId: ID!
+                ) {
+                  clearProjectV2ItemFieldValue(
+                    input: {
+                      projectId: $projectId
+                      itemId: $itemId
+                      fieldId: $fieldId
+                    }
+                  ) {
+                    projectV2Item {
+                      id
+                    }
+                  }
+                }
+              `, {
+                projectId: project.id,
+                itemId,
+                fieldId,
+              });
+            }
+
+            async function addIssueLabel(
+              owner,
+              repository,
+              issueNumber
+            ) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo: repository,
+                issue_number: issueNumber,
+                labels: [OVERDUE_LABEL_NAME],
+              });
+            }
+
+            async function removeIssueLabel(
+              owner,
+              repository,
+              issueNumber
+            ) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner,
+                  repo: repository,
+                  issue_number: issueNumber,
+                  name: OVERDUE_LABEL_NAME,
+                });
+              } catch (error) {
+                /*
+                 * A 404 means the label was not attached or does not
+                 * exist. Either condition requires no further work.
+                 */
+                if (error.status !== 404) {
+                  throw error;
+                }
+              }
+            }
+
+            let cursor = null;
+            let hasNextPage = true;
+
+            let itemsChecked = 0;
+            let startDatesSet = 0;
+            let completionDatesSet = 0;
+            let completionDatesUpdated = 0;
+            let completionDatesCleared = 0;
+            let overdueLabelsAdded = 0;
+            let overdueLabelsRemoved = 0;
+            let unchanged = 0;
+
+            while (hasNextPage) {
+              const itemData = await github.graphql(`
+                query(
+                  $owner: String!
+                  $number: Int!
+                  $cursor: String
+                ) {
+                  organization(login: $owner) {
+                    projectV2(number: $number) {
+                      items(first: 100, after: $cursor) {
+                        pageInfo {
+                          hasNextPage
+                          endCursor
+                        }
+
+                        nodes {
+                          id
+
+                          content {
+                            ... on Issue {
+                              id
+                              number
+                              title
+                              state
+                              closedAt
+
+                              labels(first: 100) {
+                                nodes {
+                                  name
+                                }
+                              }
+
+                              repository {
+                                name
+                                nameWithOwner
+
+                                owner {
+                                  login
+                                }
+                              }
+                            }
+
+                            ... on PullRequest {
+                              number
+                              title
+
+                              repository {
+                                nameWithOwner
+                              }
+                            }
+
+                            ... on DraftIssue {
+                              title
+                            }
+                          }
+
+                          fieldValues(first: 100) {
+                            nodes {
+                              ... on ProjectV2ItemFieldSingleSelectValue {
+                                optionId
+                                name
+
+                                field {
+                                  ... on ProjectV2FieldCommon {
+                                    id
+                                    name
+                                  }
+                                }
+                              }
+
+                              ... on ProjectV2ItemFieldDateValue {
+                                date
+
+                                field {
+                                  ... on ProjectV2FieldCommon {
+                                    id
+                                    name
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, {
+                owner: PROJECT_OWNER,
+                number: PROJECT_NUMBER,
+                cursor,
+              });
+
+              const itemsConnection =
+                itemData.organization?.projectV2?.items;
+
+              if (!itemsConnection) {
+                core.setFailed("Could not retrieve Project items.");
+                return;
+              }
+
+              for (const item of itemsConnection.nodes) {
+                itemsChecked++;
+
+                const values =
+                  item.fieldValues.nodes.filter(Boolean);
+
+                const statusValue = values.find(
+                  value => value.field?.id === statusField.id
+                );
+
+                const startDateValue = values.find(
+                  value => value.field?.id === startDateField.id
+                );
+
+                const completionDateValue = values.find(
+                  value =>
+                    value.field?.id === completionDateField.id
+                );
+
+                const targetDateValue = values.find(
+                  value => value.field?.id === targetDateField.id
+                );
+
+                const existingStartDate =
+                  startDateValue?.date ?? null;
+
+                const existingCompletionDate =
+                  completionDateValue?.date ?? null;
+
+                const targetDate =
+                  targetDateValue?.date ?? null;
+
+                const isInProgress =
+                  statusValue?.optionId === inProgressOption.id;
+
+                const content = item.content;
+
+                const title =
+                  content?.title ?? `Project item ${item.id}`;
+
+                /*
+                 * Only Issue content has an id and state in this query.
+                 * Pull requests and draft issues are ignored by the
+                 * completion-date and overdue-label rules.
+                 */
+                const isIssue =
+                  Boolean(content?.id) &&
+                  typeof content?.state === "string";
+
+                const isOpenIssue =
+                  isIssue && content.state === "OPEN";
+
+                const isClosedIssue =
+                  isIssue &&
+                  content.state === "CLOSED" &&
+                  Boolean(content.closedAt);
+
+                let itemChanged = false;
+
+                /*
+                 * Set Start date once when the Project item enters
+                 * In Progress.
+                 */
+                if (isInProgress && !existingStartDate) {
+                  await setDateField(
+                    item.id,
+                    startDateField.id,
+                    today
+                  );
+
+                  core.info(
+                    `Set start date to ${today} for: ${title}`
+                  );
+
+                  startDatesSet++;
+                  itemChanged = true;
+                }
+
+                /*
+                 * Clear Completion date whenever an issue is open.
+                 *
+                 * Normally the event-driven workflow handles this
+                 * immediately. This daily check repairs anything missed.
+                 */
+                if (isOpenIssue && existingCompletionDate) {
+                  await clearFieldValue(
+                    item.id,
+                    completionDateField.id
+                  );
+
+                  core.info(
+                    `Cleared completion date for open issue: ${title}`
+                  );
+
+                  completionDatesCleared++;
+                  itemChanged = true;
+                }
+
+                /*
+                 * Set or correct Completion date using the latest closedAt
+                 * value. This also handles an issue that was reopened and
+                 * closed again.
+                 */
+                if (isClosedIssue) {
+                  const latestCompletionDate =
+                    formatTeamDate(content.closedAt);
+
+                  if (!existingCompletionDate) {
+                    await setDateField(
+                      item.id,
+                      completionDateField.id,
+                      latestCompletionDate
+                    );
+
+                    core.info(
+                      `Set completion date to ` +
+                      `${latestCompletionDate} for: ${title}`
+                    );
+
+                    completionDatesSet++;
+                    itemChanged = true;
+                  } else if (
+                    existingCompletionDate !== latestCompletionDate
+                  ) {
+                    await setDateField(
+                      item.id,
+                      completionDateField.id,
+                      latestCompletionDate
+                    );
+
+                    core.info(
+                      `Updated completion date from ` +
+                      `${existingCompletionDate} to ` +
+                      `${latestCompletionDate} for: ${title}`
+                    );
+
+                    completionDatesUpdated++;
+                    itemChanged = true;
+                  }
+                }
+
+                /*
+                 * Add Overdue after the Target date has passed.
+                 *
+                 * A Target date equal to today is not overdue. Change
+                 * targetDate < today to targetDate <= today if the label
+                 * should be applied on the Target date itself.
+                 */
+                if (isIssue) {
+                  const hasOverdueLabel =
+                    content.labels.nodes.some(
+                      label =>
+                        label.name.toLowerCase() ===
+                        OVERDUE_LABEL_NAME.toLowerCase()
+                    );
+
+                  const shouldBeOverdue =
+                    isOpenIssue &&
+                    Boolean(targetDate) &&
+                    targetDate < today;
+
+                  const repositoryOwner =
+                    content.repository.owner.login;
+
+                  const repositoryName =
+                    content.repository.name;
+
+                  if (shouldBeOverdue && !hasOverdueLabel) {
+                    try {
+                      await addIssueLabel(
+                        repositoryOwner,
+                        repositoryName,
+                        content.number
+                      );
+
+                      core.info(
+                        `Added "${OVERDUE_LABEL_NAME}" to ` +
+                        `${content.repository.nameWithOwner}` +
+                        `#${content.number}: ${title}`
+                      );
+
+                      overdueLabelsAdded++;
+                      itemChanged = true;
+                    } catch (error) {
+                      if (error.status === 422) {
+                        core.warning(
+                          `Could not add "${OVERDUE_LABEL_NAME}" to ` +
+                          `${content.repository.nameWithOwner}` +
+                          `#${content.number}. Confirm that the label ` +
+                          "exists in that repository."
+                        );
+                      } else {
+                        throw error;
+                      }
+                    }
+                  }
+
+                  if (!shouldBeOverdue && hasOverdueLabel) {
+                    await removeIssueLabel(
+                      repositoryOwner,
+                      repositoryName,
+                      content.number
+                    );
+
+                    core.info(
+                      `Removed "${OVERDUE_LABEL_NAME}" from ` +
+                      `${content.repository.nameWithOwner}` +
+                      `#${content.number}: ${title}`
+                    );
+
+                    overdueLabelsRemoved++;
+                    itemChanged = true;
+                  }
+                }
+
+                if (!itemChanged) {
+                  unchanged++;
+                }
+              }
+
+              hasNextPage =
+                itemsConnection.pageInfo.hasNextPage;
+
+              cursor =
+                itemsConnection.pageInfo.endCursor;
+            }
+
+            await core.summary
+              .addHeading("Daily Project Maintenance")
+              .addTable([
+                [
+                  { data: "Result", header: true },
+                  { data: "Count", header: true },
+                ],
+                [
+                  "Project items checked",
+                  String(itemsChecked),
+                ],
+                [
+                  "Start dates populated",
+                  String(startDatesSet),
+                ],
+                [
+                  "Completion dates populated",
+                  String(completionDatesSet),
+                ],
+                [
+                  "Completion dates corrected",
+                  String(completionDatesUpdated),
+                ],
+                [
+                  "Completion dates cleared",
+                  String(completionDatesCleared),
+                ],
+                [
+                  "Overdue labels added",
+                  String(overdueLabelsAdded),
+                ],
+                [
+                  "Overdue labels removed",
+                  String(overdueLabelsRemoved),
+                ],
+                [
+                  "Items unchanged",
+                  String(unchanged),
+                ],
+              ])
+              .write();
+
+            core.info(
+              `Checked ${itemsChecked} item(s); ` +
+              `set ${startDatesSet} start date(s); ` +
+              `set ${completionDatesSet} completion date(s); ` +
+              `corrected ${completionDatesUpdated} completion date(s); ` +
+              `cleared ${completionDatesCleared} completion date(s); ` +
+              `added ${overdueLabelsAdded} overdue label(s); ` +
+              `removed ${overdueLabelsRemoved} overdue label(s).`
+            );
