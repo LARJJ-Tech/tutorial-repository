@@ -27,6 +27,8 @@ jobs:
              * If its parent is complete, close that parent. Then repeat
              * upward so nested parent issues can also be closed.
              */
+            const MANUAL_CLOSE_LABEL = "Manual Close";
+             
             let currentIssueId = context.payload.issue.node_id;
 
             while (currentIssueId) {
@@ -44,6 +46,12 @@ jobs:
                         number
                         title
                         state
+
+                        labels(first: 20) {
+                          nodes {
+                            name
+                          }
+                        }
 
                         repository {
                           nameWithOwner
@@ -124,6 +132,20 @@ jobs:
                     `#${issue.number} — ${issue.title}`
                   );
                 }
+
+                break;
+              }
+              
+              const manualClose = parent.labels.nodes.some(
+                label => label.name === MANUAL_CLOSE_LABEL
+              );
+
+              if (manualClose) {
+                core.notice(
+                  `Parent ${parent.repository.nameWithOwner}` +
+                  `#${parent.number} has the "${MANUAL_CLOSE_LABEL}" label. ` +
+                  "Skipping automatic closure."
+                );
 
                 break;
               }
