@@ -23,7 +23,7 @@ jobs:
           retries: 3
           script: |
             const PROJECT_OWNER = "LARJJ-Tech";
-            const PROJECT_NUMBER = 3;
+            const PROJECT_NUMBER = 6;
 
             /*
              * This is still a GitHub Project field.
