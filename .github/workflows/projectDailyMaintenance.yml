@@ -28,7 +28,7 @@ jobs:
 
             const STATUS_FIELD_NAME = "Status";
             const START_DATE_FIELD_NAME = "Start date";
-            const COMPLETION_DATE_FIELD_NAME = "Completion date";
+            const COMPLETION_DATE_FIELD_NAME = "Completion Date";
             const TARGET_DATE_FIELD_NAME = "Target date";
 
             const IN_PROGRESS_OPTION_NAME = "In Progress";
