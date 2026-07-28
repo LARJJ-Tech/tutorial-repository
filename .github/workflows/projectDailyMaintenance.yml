@@ -24,7 +24,7 @@ jobs:
           retries: 3
           script: |
             const PROJECT_OWNER = "LARJJ-Tech";
-            const PROJECT_NUMBER = 3;
+            const PROJECT_NUMBER = 6;
 
             const STATUS_FIELD_NAME = "Status";
             const START_DATE_FIELD_NAME = "Start date";
