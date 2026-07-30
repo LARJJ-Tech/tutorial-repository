@@ -1,7 +1,6 @@
 name: Daily Project Maintenance
 
 on:
-  schedule:
 
   workflow_dispatch:
 
