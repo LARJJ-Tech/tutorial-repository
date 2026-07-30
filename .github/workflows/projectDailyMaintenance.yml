@@ -2,8 +2,6 @@ name: Daily Project Maintenance
 
 on:
   schedule:
-    - cron: "55 23 * * *"
-      timezone: "America/New_York"
 
   workflow_dispatch:
 
